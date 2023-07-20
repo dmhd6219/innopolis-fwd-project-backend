@@ -4,17 +4,20 @@ Backend for [Innopolis FWD Project](https://github.com/dmhd6219/innopolis-fwd-pr
 
 # Installation & Get started
 
-:one: **Clone** this repository
+
+:one: **Run parser** by simply running `parser.py`
+
+:two: **Clone this repository** by running:
 ```commandline
 git clone https://github.com/dmhd6219/innopolis-fwd-project
 ```
 
-:two: **Install dependencies** by running:
+:three: **Install dependencies** by running:
 ```commandline
 pip install -r requirements.txt
 ```
 
-:three: **Try it out** by running:
+:four: **Try it out** by running:
 ```commandline
 uvicorn inno-fwd.main:app --reload
 ```
