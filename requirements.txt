@@ -3,4 +3,4 @@ fastapi
 pydantic
 selenium
 passlib[bcrypt]
-python-jose[cryptography]
+starlette
