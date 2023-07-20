@@ -18,3 +18,5 @@ class Item(Base):
     description = Column(String, index=True)
     created = Column(Date, index=True)
     is_private = Column(BOOLEAN, index=True)
+
+

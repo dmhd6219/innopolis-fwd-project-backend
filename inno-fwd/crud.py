@@ -21,7 +21,7 @@ def get_admins(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Admin).offset(skip).limit(limit).all()
 
 
-def create_admin(db: Session, admin: schemas.AdminCreate):
+def create_admin(db: Session, admin: schemas.AdminCreate) -> models.Item:
     fake_hashed_password = admin.password + "notreallyhashed"
     db_user = models.Admin(email=admin.email, hashed_password=fake_hashed_password)
     db.add(db_user)
