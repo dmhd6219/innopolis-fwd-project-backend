@@ -7,15 +7,20 @@ class ItemBase(BaseModel):
     title: str | None = None
     description: str | None = None
     created: datetime.date
-    is_private: bool = False
 
 
 class ItemCreate(ItemBase):
-    pass
+    image: bytes
+
+
+class ItemUpdate(ItemBase):
+    created: datetime.date | None = None
+    image: bytes | None = None
 
 
 class Item(ItemBase):
     id: int
+    image_path: str
 
     class Config:
         orm_mode = True

@@ -43,9 +43,25 @@ def get_items(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Item).offset(skip).limit(limit).all()
 
 
-def create_item(db: Session, item: schemas.ItemCreate):
-    db_item = models.Item(**item.dict())
+def create_item(db: Session, item: schemas.ItemBase):
+    path = f'/{item.date.year}/{item.date.month}/{item.date.day}/image.png'
+    db_item = models.Item(**item.dict(), image_path=path)
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
     return db_item
+
+
+def create_item_by_values(db: Session, date: datetime.date, title: str | None = None, desc: str | None = None):
+    path = f'/{date.year}/{date.month}/{date.day}/image.png'
+    db_item = models.Item(title=title, description=desc, created=date, image_path=path)
+    db.add(db_item)
+    db.commit()
+    db.refresh(db_item)
+    return db_item
+
+
+def delete_item(db: Session, item: models.Item):
+    db.delete(item)
+    db.commit()
+    db.refresh(item)

@@ -8,7 +8,7 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from sqlalchemy.orm import Session
 from fastapi.responses import StreamingResponse
 
-from . import crud, models, schemas, auth
+from . import crud, models, schemas, auth, images
 from .database import engine, get_db
 
 models.Base.metadata.create_all(bind=engine)
@@ -32,7 +32,7 @@ def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return items
 
 
-@app.get('/create-database')
+@app.post('/create-database')
 def create_database(token: str, db: Session = Depends(get_db)):
     if not auth.get_current_user(db, token):
         raise HTTPException(status_code=400, detail="Not authenticated to do this")
@@ -63,13 +63,64 @@ def get_item_image(date: datetime.date, db: Session = Depends(get_db)):
     return ""
 
 
+@app.post('/items/create', response_model=schemas.Item)
+def create_item(token: str, item: schemas.ItemCreate, override: bool = False,
+                db: Session = Depends(get_db)):
+    if not auth.get_current_user(db, token):
+        raise HTTPException(status_code=400, detail="Not authenticated to do this")
+
+    old_item = crud.get_item_by_date(db=db, date=item.created)
+    if old_item and override:
+        # removing existing items
+        os.remove(os.path.dirname(
+            os.path.realpath(__file__)) + f'/{item.date.year}/{item.date.month}/{item.date.day}/image.png')
+        crud.delete_item(db=db, item=old_item)
+
+        # saving photo from bytesarray
+        images.save_photo(item.image, item.created)
+
+        return crud.create_item_by_values(db=db, title=item.title, desc=item.desc, date=item.date)
+
+    if not old_item:
+        images.save_photo(item.image, item.created)
+
+        return crud.create_item_by_values(db=db, title=item.title, desc=item.desc, date=item.date)
+
+    raise HTTPException(status_code=400, detail="Such Item already exists")
+
+
+@app.post('/items/edit', response_model=schemas.Item)
+def edit_item(token: str, item: schemas.ItemCreate, create: bool = False,
+              db: Session = Depends(get_db)):
+    if not auth.get_current_user(db, token):
+        raise HTTPException(status_code=400, detail="Not authenticated to do this")
+
+    old_item = crud.get_item_by_date(db=db, date=item.created)
+    if not old_item and create:
+        images.save_photo(item.image, item.created)
+
+        return crud.create_item_by_values(db=db, title=item.title, desc=item.desc, date=item.date)
+
+    if old_item:
+        # removing existing items
+        os.remove(os.path.dirname(
+            os.path.realpath(__file__)) + f'/{item.date.year}/{item.date.month}/{item.date.day}/image.png')
+        crud.delete_item(db=db, item=old_item)
+
+        # saving photo from bytesarray
+        images.save_photo(item.image, item.created)
+
+        return crud.create_item_by_values(db=db, title=item.title, desc=item.desc, date=item.date)
+
+    raise HTTPException(status_code=400, detail="No such Item")
+
+
 @app.post("/register/", response_model=schemas.Admin)
 def register(email: str, password: str, db: Session = Depends(get_db)):
-    user = crud.create_admin_by_mail_and_password(db=db, email=email, password=password)
-    return user
+    return crud.create_admin_by_mail_and_password(db=db, email=email, password=password)
 
 
-@app.post("/token/", response_model=schemas.Token)
+@app.post("/token/")
 async def login_for_access_token(email: str, password: str, db: Session = Depends(get_db)):
     user = auth.authenticate_user(db, email, password)
     if not user:
