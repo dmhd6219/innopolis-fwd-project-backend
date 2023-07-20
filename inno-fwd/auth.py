@@ -1,8 +1,7 @@
 from datetime import timedelta, datetime
-from typing import Union, Annotated
+from typing import Union
 
-from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import HTTPException
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session

@@ -4,3 +4,4 @@ pydantic
 selenium
 passlib[bcrypt]
 starlette
+python-jose
