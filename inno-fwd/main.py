@@ -15,25 +15,9 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 
-@app.on_event("startup")
-def on_startup():
-    pass
-
-
-@app.on_event("shutdown")
-def on_shutdown():
-    pass
-
-
 @app.get('/')
 def index_page():
     return "hello!"
-
-
-@app.get("/admins/", response_model=list[schemas.Admin])
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    users = crud.get_admins(db, skip=skip, limit=limit)
-    return users
 
 
 @app.get("/admins/me/", response_model=schemas.Admin)
@@ -48,17 +32,6 @@ def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return items
 
 
-@app.post('/items/', response_model=schemas.Item)
-def create_item(item: schemas.ItemCreate, token: str, db: Session = Depends(get_db)):
-    if not auth.get_current_user(db, token):
-        raise HTTPException(status_code=400, detail="Not authenticated to do this")
-    db_item = crud.get_item_by_date(db, date=item.created)
-    if db_item:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    return crud.create_item(db=db, item=item)
-
-
 @app.get('/create-database')
 def create_database(token: str, db: Session = Depends(get_db)):
     if not auth.get_current_user(db, token):
@@ -71,7 +44,7 @@ def create_database(token: str, db: Session = Depends(get_db)):
                     date = datetime.date(int(year), int(month), int(day))
                     crud.create_item(db=db, item=schemas.ItemCreate(created=date))
                     print(f'created {year}:{month}:{day}')
-    return "Hey!"
+    return "DB is created!"
 
 
 @app.get('/items/{date}', response_model=schemas.Item)
