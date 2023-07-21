@@ -7,12 +7,18 @@ from datetime import timedelta
 from fastapi import Depends, FastAPI, HTTPException, status
 from sqlalchemy.orm import Session
 from fastapi.responses import StreamingResponse
+from starlette.middleware.cors import CORSMiddleware
 
 from . import crud, models, schemas, auth, images
 from .database import engine, get_db
 
 models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
+app.add_middleware(CORSMiddleware,
+                   allow_origins=["*"],
+                   allow_credentials=True,
+                   allow_methods=["*"],
+                   allow_headers=["*"])
 
 
 @app.get('/')
@@ -20,13 +26,13 @@ def index_page():
     return "hello!"
 
 
-@app.get("/admins/me/", response_model=schemas.Admin)
+@app.get("/admins/me", response_model=schemas.Admin)
 def get_authorized_admin_account(token: str, db: Session = Depends(get_db)):
     print("in users/me")
     return auth.get_current_user(db, token)
 
 
-@app.get("/items/", response_model=list[schemas.Item])
+@app.get("/items", response_model=list[schemas.Item])
 def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     items = crud.get_items(db, skip=skip, limit=limit)
     return items
@@ -115,12 +121,14 @@ def edit_item(token: str, item: schemas.ItemCreate, create: bool = False,
     raise HTTPException(status_code=400, detail="No such Item")
 
 
-@app.post("/register/", response_model=schemas.Admin)
+@app.post("/register", response_model=schemas.Admin)
 def register(email: str, password: str, db: Session = Depends(get_db)):
+    if crud.get_admin_by_email(db=db, email=email):
+        raise HTTPException(status_code=400, detail="You already authenticated to do this")
     return crud.create_admin_by_mail_and_password(db=db, email=email, password=password)
 
 
-@app.post("/token/")
+@app.post("/token")
 async def login_for_access_token(email: str, password: str, db: Session = Depends(get_db)):
     user = auth.authenticate_user(db, email, password)
     if not user:
