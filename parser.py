@@ -61,7 +61,7 @@ def get_image(year: int, month: int, day: int) -> None:
 
 
 def main() -> None:
-    start_date = datetime.date(2006, 3, 1)
+    start_date = datetime.date(2023, 7, 19)
     end_date = datetime.date.today()
 
     while start_date < end_date:

@@ -52,8 +52,8 @@ async def get_current_user(db: Session, token: str):
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        if payload.get("exp") < datetime.utcnow():
-            raise JWTError
+        # if payload.get("exp") < datetime.utcnow():
+        #     raise JWTError
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
