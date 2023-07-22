@@ -64,3 +64,8 @@ def create_item_by_values(db: Session, date: datetime.date, title: str | None = 
 def delete_item(db: Session, item: models.Item):
     db.delete(item)
     db.commit()
+
+
+def delete_item_by_date(db: Session, date: datetime.date):
+    db.delete(db.query(models.Item).filter(models.Item.created == date).first())
+    db.commit()

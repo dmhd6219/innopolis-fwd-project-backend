@@ -115,13 +115,41 @@ def get_item_image(date: datetime.date, db: Session = Depends(get_db)):
     return ""
 
 
+@app.delete('/items/{date}/delete')
+async def get_item(token: str, date: datetime.date, db: Session = Depends(get_db)):
+    if not await auth.get_current_user(db, token):
+        raise HTTPException(status_code=400, detail="Not authenticated to do this")
+
+    return crud.delete_item_by_date(db=db, date=date)
+
+
+@app.post('/items/{item_date}/edit')
+async def edit_item(token: str,
+                    item_date: datetime.date,
+                    title: str = Form(...),
+                    file: UploadFile = File(...),
+                    desc: str = Form(...),
+                    db: Session = Depends(get_db)):
+    if not await auth.get_current_user(db, token):
+        raise HTTPException(status_code=400, detail="Not authenticated to do this")
+
+    old_item = crud.get_item_by_date(db=db, date=item_date)
+    print(old_item)
+
+    if not old_item:
+        raise HTTPException(status_code=400, detail="No such Item")
+
+    crud.delete_item_by_date(db=db, date=item_date)
+    images.save_photo(await file.read(), item_date)
+    return crud.create_item_by_values(db=db, title=title, desc=desc, date=item_date)
+
+
 @app.post('/items/create')
 async def create_item(token: str,
                       title: str = Form(...),
                       date: str = Form(...),
                       file: UploadFile = File(...),
                       desc: str = Form(...),
-                      override: bool = True,
                       db: Session = Depends(get_db)):
     if not await auth.get_current_user(db, token):
         raise HTTPException(status_code=400, detail="Not authenticated to do this")
@@ -130,49 +158,11 @@ async def create_item(token: str,
     old_item = crud.get_item_by_date(db=db, date=date_obj)
     print(old_item)
 
-    if old_item and override:
-        real_path = '\\'.join(os.path.dirname(os.path.realpath(__file__)).split('\\')[:-1:]) + '/photos'
-        # removing existing items
-        os.remove(real_path + f'/{date_obj.year}/{date_obj.month}/{date_obj.day}/image.png')
-        crud.delete_item(db=db, item=old_item)
-
-        # saving photo from bytesarray
-        images.save_photo(await file.read(), date_obj)
-
-        return crud.create_item_by_values(db=db, title=title, desc=desc, date=date_obj)
-
-    if not old_item:
-        images.save_photo(await file.read(), date_obj)
-
-        return crud.create_item_by_values(db=db, title=title, desc=desc, date=date_obj)
-
-    raise HTTPException(status_code=400, detail="Such Item already exists")
-
-
-@app.post('/items/edit', response_model=schemas.Item)
-def edit_item(token: str, item: schemas.ItemCreate, create: bool = False,
-              db: Session = Depends(get_db)):
-    if not auth.get_current_user(db, token):
-        raise HTTPException(status_code=400, detail="Not authenticated to do this")
-
-    old_item = crud.get_item_by_date(db=db, date=item.created)
-    if not old_item and create:
-        images.save_photo(item.image, item.created)
-
-        return crud.create_item_by_values(db=db, title=item.title, desc=item.desc, date=item.date)
-
     if old_item:
-        # removing existing items
-        os.remove(os.path.dirname(
-            os.path.realpath(__file__)) + f'/{item.date.year}/{item.date.month}/{item.date.day}/image.png')
-        crud.delete_item(db=db, item=old_item)
+        raise HTTPException(status_code=400, detail="Such Item already exists")
 
-        # saving photo from bytesarray
-        images.save_photo(item.image, item.created)
-
-        return crud.create_item_by_values(db=db, title=item.title, desc=item.desc, date=item.date)
-
-    raise HTTPException(status_code=400, detail="No such Item")
+    images.save_photo(await file.read(), date_obj)
+    return crud.create_item_by_values(db=db, title=title, desc=desc, date=date_obj)
 
 
 @app.post("/register", response_model=schemas.Admin)
