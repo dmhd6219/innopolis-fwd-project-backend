@@ -17,6 +17,7 @@ app = FastAPI()
 app.add_middleware(CORSMiddleware,
                    allow_origins=[
                        'https://innopolis-fwd-project.pages.dev',
+                       'https://innopolis-fwd-project-ewj.pages.dev/'
                        "http://localhost:5173"
                    ],
                    allow_credentials=True,
