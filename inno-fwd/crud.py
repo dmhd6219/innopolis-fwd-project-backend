@@ -35,8 +35,7 @@ def get_items(db: Session, skip: int = 0, limit: int = 100):
 
 
 def create_item_by_values(db: Session, date: datetime.date, title: str | None = None, desc: str | None = None, original : bool = False):
-    path = f'/{date.year}/{date.month}/{date.day}/image.png'
-    db_item = models.Item(title=title, description=desc, created=date, image_path=path, original=original)
+    db_item = models.Item(title=title, description=desc, created=date, original=original)
     db.add(db_item)
     db.commit()
     db.refresh(db_item)

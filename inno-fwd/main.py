@@ -17,6 +17,7 @@ app = FastAPI()
 app.add_middleware(CORSMiddleware,
                    allow_origins=[
                        'https://innopolis-fwd-project.pages.dev',
+                       "http://localhost:5173"
                    ],
                    allow_credentials=True,
                    allow_methods=["POST", "DELETE", "GET"],
@@ -29,31 +30,29 @@ def index_page():
     return "hello!"
 
 
-@app.get("/admins/me", response_model=schemas.Admin)
+@app.get("/admins/me")
 def get_authorized_admin_account(token: str, db: Session = Depends(get_db)):
     print("in users/me")
     return auth.get_current_user(db, token)
 
 
-@app.get("/items", response_model=list[schemas.Item])
+@app.get("/items")
 def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     items = crud.get_items(db, skip=skip, limit=limit)
     return items
 
-
-@app.get('/create-database')
-def create_database(token: str, db: Session = Depends(get_db)):
-    if not auth.get_current_user(db, token):
-        raise HTTPException(status_code=400, detail="Not authenticated to do this")
-    for year in os.listdir('./photos'):
-        for month in os.listdir(f'./photos/{year}'):
-            for day in os.listdir(f'./photos/{year}/{month}'):
-                files = os.listdir(f'./photos/{year}/{month}/{day}')
-                if "image.png" in files:
-                    date = datetime.date(int(year), int(month), int(day))
-                    crud.create_item_by_values(db=db, date=date, original=True)
-                    print(f'created {year}:{month}:{day}')
-    return "DB is created!"
+# # TODO : remove
+# @app.get('/create-database')
+# def create_database(db: Session = Depends(get_db)):
+#     for year in os.listdir('./photos'):
+#         for month in os.listdir(f'./photos/{year}'):
+#             for day in os.listdir(f'./photos/{year}/{month}'):
+#                 files = os.listdir(f'./photos/{year}/{month}/{day}')
+#                 if "image.png" in files:
+#                     date = datetime.date(int(year), int(month), int(day))
+#                     crud.create_item_by_values(db=db, date=date, original=True)
+#                     print(f'created {year}:{month}:{day}')
+#     return "DB is created!"
 
 
 @app.get('/items/{date}/exists')
@@ -61,12 +60,12 @@ def get_item_existence(date: datetime.date, db: Session = Depends(get_db)):
     return not (crud.get_item_by_date(db=db, date=date) is None)
 
 
-@app.get('/items/{date}', response_model=schemas.Item)
+@app.get('/items/{date}')
 def get_item(date: datetime.date, db: Session = Depends(get_db)):
     return crud.get_item_by_date(db=db, date=date)
 
 
-@app.get('/items/{date}/photo', response_model=bytes)
+@app.get('/items/{date}/photo')
 def get_item_image(date: datetime.date, db: Session = Depends(get_db)):
     item = crud.get_item_by_date(db=db, date=date)
     if item:
@@ -130,7 +129,6 @@ async def create_item(token: str,
 
     date_obj = datetime.date(year=int(date.split('-')[0]), month=int(date.split('-')[1]), day=int(date.split('-')[2]))
     old_item = crud.get_item_by_date(db=db, date=date_obj)
-    print(old_item)
 
     if old_item:
         raise HTTPException(status_code=400, detail="Such Item already exists")
@@ -139,7 +137,7 @@ async def create_item(token: str,
     return crud.create_item_by_values(db=db, title=title, desc=desc, date=date_obj)
 
 
-@app.post("/register", response_model=schemas.Admin)
+@app.post("/register")
 def register(email: str, password: str, db: Session = Depends(get_db)):
     print(email, password)
     if crud.get_admin_by_email(db=db, email=email):
