@@ -17,11 +17,33 @@ from .database import engine, get_db
 models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 app.add_middleware(CORSMiddleware,
-                   allow_origins=["*"],
+                   allow_origins=[
+                       'https://innopolis-fwd-project.pages.dev',
+                       'https://innopolis-fwd-project.pages.dev/paintings'
+                   ],
                    allow_credentials=True,
-                   allow_methods=["*"],
-                   allow_headers=["*"],
+                   allow_methods=["POST", "DELETE", "GET"],
+                   allow_headers=['*']
                    )
+
+@app.middleware("http")
+async def add_cors_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "https://innopolis-fwd-project.pages.dev"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    return response
+
+
+@app.middleware("https")
+async def add_cors_headerss(request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "https://innopolis-fwd-project.pages.dev"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    return response
 
 
 @app.get('/')
