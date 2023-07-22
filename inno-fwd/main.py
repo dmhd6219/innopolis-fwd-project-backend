@@ -15,13 +15,9 @@ from .database import engine, get_db
 models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 app.add_middleware(CORSMiddleware,
-                   allow_origins=[
-                       'https://innopolis-fwd-project.pages.dev',
-                       'https://innopolis-fwd-project-ewj.pages.dev'
-                       "http://localhost:5173"
-                   ],
+                   allow_origins=['*'],
                    allow_credentials=True,
-                   allow_methods=["POST", "DELETE", "GET"],
+                   allow_methods=['*'],
                    allow_headers=['*']
                    )
 
