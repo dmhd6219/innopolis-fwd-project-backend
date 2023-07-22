@@ -7,6 +7,7 @@ class ItemBase(BaseModel):
     title: str | None = None
     description: str | None = None
     created: datetime.date
+    original : bool = False
 
 
 class ItemCreate(ItemBase):

@@ -21,15 +21,6 @@ def get_admins(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Admin).offset(skip).limit(limit).all()
 
 
-def create_admin(db: Session, admin: schemas.AdminCreate) -> models.Admin:
-    hashed_password = auth.get_password_hash(admin.password)
-    db_user = models.Admin(email=admin.email, hashed_password=hashed_password)
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
-
-
 def create_admin_by_mail_and_password(db: Session, email: str, password: str) -> models.Admin:
     hashed_password = auth.get_password_hash(password)
     db_user = models.Admin(email=email, hashed_password=hashed_password)
@@ -43,27 +34,13 @@ def get_items(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Item).offset(skip).limit(limit).all()
 
 
-def create_item(db: Session, item: schemas.ItemBase):
-    path = f'/{item.date.year}/{item.date.month}/{item.date.day}/image.png'
-    db_item = models.Item(**item.dict(), image_path=path)
-    db.add(db_item)
-    db.commit()
-    db.refresh(db_item)
-    return db_item
-
-
-def create_item_by_values(db: Session, date: datetime.date, title: str | None = None, desc: str | None = None):
+def create_item_by_values(db: Session, date: datetime.date, title: str | None = None, desc: str | None = None, original : bool = False):
     path = f'/{date.year}/{date.month}/{date.day}/image.png'
-    db_item = models.Item(title=title, description=desc, created=date, image_path=path)
+    db_item = models.Item(title=title, description=desc, created=date, image_path=path, original=original)
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
     return db_item
-
-
-def delete_item(db: Session, item: models.Item):
-    db.delete(item)
-    db.commit()
 
 
 def delete_item_by_date(db: Session, date: datetime.date):

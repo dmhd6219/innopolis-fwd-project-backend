@@ -17,7 +17,6 @@ app = FastAPI()
 app.add_middleware(CORSMiddleware,
                    allow_origins=[
                        'https://innopolis-fwd-project.pages.dev',
-                       'https://innopolis-fwd-project.pages.dev/paintings'
                    ],
                    allow_credentials=True,
                    allow_methods=["POST", "DELETE", "GET"],
@@ -28,40 +27,6 @@ app.add_middleware(CORSMiddleware,
 @app.get('/')
 def index_page():
     return "hello!"
-
-
-@app.post('/debug')
-def debug_page(message: str):
-    print(message)
-    return message
-
-
-class TestBase(BaseModel):
-    title: str | None = None
-    desc: str
-
-
-@app.post('/debug-body')
-def debug_page_with_body(body: TestBase, message: str):
-    print(message)
-    print(body)
-    return message
-
-
-@app.post('/debug-image-body')
-def debug_page_with_image_in_body(title: str = Form(...),
-                                  date: str = Form(...),
-                                  file: UploadFile = File(...),
-                                  desc: str = Form(...),
-                                  message: str | None = None):
-    print(date)
-    return file
-
-
-@app.post('/debug-token')
-def debug_page_with_token(token: str, message: str):
-    print(token, message)
-    return token, message
 
 
 @app.get("/admins/me", response_model=schemas.Admin)
@@ -76,7 +41,7 @@ def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return items
 
 
-@app.post('/create-database')
+@app.get('/create-database')
 def create_database(token: str, db: Session = Depends(get_db)):
     if not auth.get_current_user(db, token):
         raise HTTPException(status_code=400, detail="Not authenticated to do this")
@@ -86,7 +51,7 @@ def create_database(token: str, db: Session = Depends(get_db)):
                 files = os.listdir(f'./photos/{year}/{month}/{day}')
                 if "image.png" in files:
                     date = datetime.date(int(year), int(month), int(day))
-                    crud.create_item_by_values(db=db, date=date)
+                    crud.create_item_by_values(db=db, date=date, original=True)
                     print(f'created {year}:{month}:{day}')
     return "DB is created!"
 
@@ -121,6 +86,13 @@ async def get_item(token: str, date: datetime.date, db: Session = Depends(get_db
     if not await auth.get_current_user(db, token):
         raise HTTPException(status_code=400, detail="Not authenticated to do this")
 
+    old_item = crud.get_item_by_date(db=db, date=date)
+    if not old_item:
+        raise HTTPException(status_code=400, detail="No such Item")
+
+    if old_item.original:
+        raise HTTPException(status_code=400, detail="You cannot delete Original Item")
+
     return crud.delete_item_by_date(db=db, date=date)
 
 
@@ -135,10 +107,11 @@ async def edit_item(token: str,
         raise HTTPException(status_code=400, detail="Not authenticated to do this")
 
     old_item = crud.get_item_by_date(db=db, date=item_date)
-    print(old_item)
-
     if not old_item:
         raise HTTPException(status_code=400, detail="No such Item")
+
+    if old_item.original:
+        raise HTTPException(status_code=400, detail="You cannot edit Original Item")
 
     crud.delete_item_by_date(db=db, date=item_date)
     images.save_photo(await file.read(), item_date)

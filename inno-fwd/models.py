@@ -17,6 +17,6 @@ class Item(Base):
     title = Column(String, index=True)
     description = Column(String, index=True)
     created = Column(Date, index=True)
-    image_path = Column(String, index=True)
+    original = Column(BOOLEAN, index=True)
 
 
